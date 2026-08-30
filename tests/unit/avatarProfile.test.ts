@@ -4,6 +4,7 @@ import {
   AGENT_AVATAR_FEMALE_PRESETS,
   applyAgentAvatarFemalePreset,
   createDefaultAgentAvatarProfile,
+  getAgentAvatarRearHairColor,
   normalizeAgentAvatarProfile,
 } from "@/lib/avatars/profile";
 
@@ -43,6 +44,25 @@ describe("female avatar presets", () => {
     expect(applied.clothing.topStyle).toBe("tee");
     expect(applied.clothing.bottomStyle).toBe("hot-pants");
     expect(normalizeAgentAvatarProfile(applied, "fallback")).toEqual(applied);
+  });
+
+  it("covers the back of each female hairstyle with its selected hair color", () => {
+    const hairColor = "#123456";
+    const femaleHairStyles: Parameters<typeof getAgentAvatarRearHairColor>[0][] = [
+      "long",
+      "bob",
+      "twin-tails",
+      "ponytail",
+      "long-wave",
+    ];
+
+    expect(
+      femaleHairStyles.map((style) => getAgentAvatarRearHairColor(style, hairColor)),
+    ).toEqual(Array(5).fill(hairColor));
+    expect(getAgentAvatarRearHairColor("short", hairColor)).toBeNull();
+    expect(getAgentAvatarRearHairColor("parted", hairColor)).toBeNull();
+    expect(getAgentAvatarRearHairColor("spiky", hairColor)).toBeNull();
+    expect(getAgentAvatarRearHairColor("bun", hairColor)).toBeNull();
   });
 
   it("keeps legacy seed-generated appearances stable", () => {

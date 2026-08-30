@@ -7,6 +7,7 @@ import * as THREE from "three";
 import {
   type AgentAvatarProfile,
   createDefaultAgentAvatarProfile,
+  getAgentAvatarRearHairColor,
 } from "@/lib/avatars/profile";
 import { RunningAvatarLoader } from "@/features/agents/components/RunningAvatarLoader";
 
@@ -38,6 +39,7 @@ const PreviewFigure = ({
   const bottomColor = profile.clothing.bottomColor;
   const shoeColor = profile.clothing.shoesColor;
   const hairColor = profile.hair.color;
+  const rearHairColor = getAgentAvatarRearHairColor(profile.hair.style, hairColor);
   const accessoryColor = topColor;
   const topStyle = profile.clothing.topStyle;
   const bottomStyle = profile.clothing.bottomStyle;
@@ -228,6 +230,13 @@ const PreviewFigure = ({
         <boxGeometry args={[0.17, 0.17, 0.15]} />
         <meshLambertMaterial color={skin} />
       </mesh>
+
+      {rearHairColor ? (
+        <mesh position={[0, 0.5, -0.083]}>
+          <boxGeometry args={[0.18, 0.17, 0.024]} />
+          <meshLambertMaterial color={rearHairColor} />
+        </mesh>
+      ) : null}
 
       {profile.hair.style === "short" ? (
         <mesh position={[0, 0.59, 0]}>
