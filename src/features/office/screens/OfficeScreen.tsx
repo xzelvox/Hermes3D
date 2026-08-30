@@ -67,7 +67,9 @@ import {
   RemoteAgentChatPanel,
   type RemoteAgentChatMessage,
 } from "@/features/office/components/RemoteAgentChatPanel";
+import { OmlxActivityPanel } from "@/features/office/components/OmlxActivityPanel";
 import { useOfficeFloorRuntimePersistence } from "@/features/office/hooks/useOfficeFloorRuntimePersistence";
+import { useOmlxLiveAgents } from "@/features/office/hooks/useOmlxLiveAgents";
 import {
   type RuntimeAgentMessageMode,
 } from "@/lib/runtime/agentMessaging";
@@ -203,6 +205,7 @@ import {
 import { deriveSkillReadinessState } from "@/lib/skills/presentation";
 import type { StandupAgentSnapshot } from "@/lib/office/standup/types";
 import type { SkillStatusEntry } from "@/lib/skills/types";
+import { isOmlxOfficeAgentId } from "@/lib/omlx/activity";
 
 const stringToColor = (str: string) => {
   let hash = 0;
@@ -945,6 +948,7 @@ export function OfficeScreen({
   const runtimeSupportsRunLifecycle = supportsCapability("runtime-agent-events");
   const { state, dispatch, hydrateAgents, setError, setLoading } =
     useAgentStore();
+  const omlxLiveAgents = useOmlxLiveAgents();
   const [agentsLoaded, setAgentsLoaded] = useState(false);
   const [didAttemptGatewayConnect, setDidAttemptGatewayConnect] = useState(false);
   const [showDelayedGatewayLoadingOverlay, setShowDelayedGatewayLoadingOverlay] =
@@ -1019,6 +1023,9 @@ export function OfficeScreen({
   const [chatOpen, setChatOpen] = useState(false);
   const [chatRosterCollapsed, setChatRosterCollapsed] = useState(false);
   const [selectedChatAgentId, setSelectedChatAgentId] = useState<string | null>(
+    null,
+  );
+  const [selectedOmlxAgentId, setSelectedOmlxAgentId] = useState<string | null>(
     null,
   );
   const [remoteChatByAgentId, setRemoteChatByAgentId] = useState<
@@ -4121,9 +4128,14 @@ export function OfficeScreen({
     ? (remoteChatByAgentId[focusedRemoteChatTarget.id] ?? EMPTY_REMOTE_CHAT_SESSION)
     : null;
   const allVisibleAgents = useMemo(
-    () => [...officeAgents, ...remoteOfficeAgents],
-    [officeAgents, remoteOfficeAgents],
+    () => [...officeAgents, ...remoteOfficeAgents, ...omlxLiveAgents.agents],
+    [officeAgents, omlxLiveAgents.agents, remoteOfficeAgents],
   );
+  const selectedOmlxResident = selectedOmlxAgentId
+    ? (omlxLiveAgents.residents.find(
+        (resident) => resident.id === selectedOmlxAgentId,
+      ) ?? null)
+    : null;
   const remoteOfficeVisible =
     remoteOfficeEnabled &&
     (remoteOfficeSourceKind === "presence_endpoint"
@@ -4519,13 +4531,19 @@ export function OfficeScreen({
           renderMode={officeRenderMode}
           onRenderModeChange={handleOfficeRenderModeChange}
           onAgentChatSelect={(agentId) => {
+            if (isOmlxOfficeAgentId(agentId)) {
+              setSelectedOmlxAgentId(agentId);
+              return;
+            }
             handleOpenAgentChat(agentId);
           }}
           onAddAgent={handleOpenCreateAgentWizard}
           onAgentEdit={(agentId) => {
+            if (isOmlxOfficeAgentId(agentId)) return;
             openAgentEditor(agentId, "avatar");
           }}
           onAgentDelete={(agentId) => {
+            if (isOmlxOfficeAgentId(agentId)) return;
             void handleDeleteAgent(agentId);
           }}
           onJukeboxInteract={() => {
@@ -4560,6 +4578,10 @@ export function OfficeScreen({
           onRemoteOfficePresenceUrlChange={setRemoteOfficePresenceUrl}
           onRemoteOfficeGatewayUrlChange={setRemoteOfficeGatewayUrl}
           onRemoteOfficeTokenChange={setRemoteOfficeToken}
+          omlxLiveAgentsEnabled={omlxLiveAgents.enabled}
+          omlxLiveAgentsLoaded={omlxLiveAgents.preferenceLoaded}
+          omlxLiveAgentsStatusText={omlxLiveAgents.statusText}
+          onOmlxLiveAgentsEnabledChange={omlxLiveAgents.setEnabled}
           voiceRepliesEnabled={voiceRepliesEnabled}
           voiceRepliesVoiceId={voiceRepliesVoiceId}
           voiceRepliesSpeed={voiceRepliesSpeed}
@@ -4605,6 +4627,9 @@ export function OfficeScreen({
           remoteOfficeStatusText={remoteOfficeStatusText}
           remoteLayoutSnapshot={remoteOfficeLayoutSnapshot}
           remoteOfficeTokenConfigured={remoteOfficeTokenConfigured}
+          omlxLiveAgentsEnabled={omlxLiveAgents.enabled}
+          omlxLiveAgentsLoaded={omlxLiveAgents.preferenceLoaded}
+          omlxLiveAgentsStatusText={omlxLiveAgents.statusText}
           voiceRepliesEnabled={voiceRepliesEnabled}
           voiceRepliesVoiceId={voiceRepliesVoiceId}
           voiceRepliesSpeed={voiceRepliesSpeed}
@@ -4616,6 +4641,7 @@ export function OfficeScreen({
           onRemoteOfficePresenceUrlChange={setRemoteOfficePresenceUrl}
           onRemoteOfficeGatewayUrlChange={setRemoteOfficeGatewayUrl}
           onRemoteOfficeTokenChange={setRemoteOfficeToken}
+          onOmlxLiveAgentsEnabledChange={omlxLiveAgents.setEnabled}
           onVoiceRepliesToggle={setVoiceRepliesEnabled}
           onVoiceRepliesVoiceChange={setVoiceRepliesVoiceId}
           onVoiceRepliesSpeedChange={setVoiceRepliesSpeed}
@@ -4666,18 +4692,28 @@ export function OfficeScreen({
           }}
           onMonitorSelect={(agentId) => {
             setMonitorAgentId(agentId);
-            if (agentId && !isRemoteOfficeAgentId(agentId)) {
+            if (
+              agentId &&
+              !isRemoteOfficeAgentId(agentId) &&
+              !isOmlxOfficeAgentId(agentId)
+            ) {
               focusLocalAgent(agentId, { openChat: false });
             }
           }}
           onAgentChatSelect={(agentId) => {
+            if (isOmlxOfficeAgentId(agentId)) {
+              setSelectedOmlxAgentId(agentId);
+              return;
+            }
             handleOpenAgentChat(agentId);
           }}
           onAddAgent={handleOpenCreateAgentWizard}
           onAgentEdit={(agentId) => {
+            if (isOmlxOfficeAgentId(agentId)) return;
             openAgentEditor(agentId, "avatar");
           }}
           onAgentDelete={(agentId) => {
+            if (isOmlxOfficeAgentId(agentId)) return;
             void handleDeleteAgent(agentId);
           }}
           onDeskAssignmentChange={handleDeskAssignmentChange}
@@ -4726,6 +4762,12 @@ export function OfficeScreen({
           }}
         />
         )}
+        {selectedOmlxResident ? (
+          <OmlxActivityPanel
+            resident={selectedOmlxResident}
+            onClose={() => setSelectedOmlxAgentId(null)}
+          />
+        ) : null}
         {jukeboxOpen ? (
           soundhermesReady ? (
             <JukeboxPanel

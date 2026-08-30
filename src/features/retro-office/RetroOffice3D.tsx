@@ -58,6 +58,7 @@ import type {
   TaskBoardStatus,
 } from "@/features/office/tasks/types";
 import { extractSpeechImage } from "@/lib/text/speech-image";
+import { isOmlxOfficeAgentId } from "@/lib/omlx/activity";
 import { MonitorImmersiveContent as MonitorImmersiveOverlay } from "@/features/retro-office/overlays/MonitorImmersiveContent";
 import {
   BUMP_RECOVERY_MS,
@@ -2580,6 +2581,9 @@ export function RetroOffice3D({
   remoteOfficeStatusText = "Remote office disabled.",
   remoteLayoutSnapshot = null,
   remoteOfficeTokenConfigured = false,
+  omlxLiveAgentsEnabled = false,
+  omlxLiveAgentsLoaded = false,
+  omlxLiveAgentsStatusText = "Off",
   voiceRepliesEnabled = false,
   voiceRepliesVoiceId = null,
   voiceRepliesSpeed = 1,
@@ -2591,6 +2595,7 @@ export function RetroOffice3D({
   onRemoteOfficePresenceUrlChange,
   onRemoteOfficeGatewayUrlChange,
   onRemoteOfficeTokenChange,
+  onOmlxLiveAgentsEnabledChange,
   onVoiceRepliesToggle,
   onVoiceRepliesVoiceChange,
   onVoiceRepliesSpeedChange,
@@ -2696,6 +2701,9 @@ export function RetroOffice3D({
   remoteOfficeStatusText?: string;
   remoteLayoutSnapshot?: OfficeLayoutSnapshot | null;
   remoteOfficeTokenConfigured?: boolean;
+  omlxLiveAgentsEnabled?: boolean;
+  omlxLiveAgentsLoaded?: boolean;
+  omlxLiveAgentsStatusText?: string;
   voiceRepliesEnabled?: boolean;
   voiceRepliesVoiceId?: string | null;
   voiceRepliesSpeed?: number;
@@ -2709,6 +2717,7 @@ export function RetroOffice3D({
   onRemoteOfficePresenceUrlChange?: (url: string) => void;
   onRemoteOfficeGatewayUrlChange?: (url: string) => void;
   onRemoteOfficeTokenChange?: (token: string) => void;
+  onOmlxLiveAgentsEnabledChange?: (enabled: boolean) => void;
   onVoiceRepliesToggle?: (enabled: boolean) => void;
   onVoiceRepliesVoiceChange?: (voiceId: string | null) => void;
   onVoiceRepliesSpeedChange?: (speed: number) => void;
@@ -3492,7 +3501,7 @@ export function RetroOffice3D({
   );
   const handleAgentContextMenu = useCallback(
     (agentId: string, x: number, y: number) => {
-      if (isRemoteOfficeAgentId(agentId)) return;
+      if (isRemoteOfficeAgentId(agentId) || isOmlxOfficeAgentId(agentId)) return;
       setContextMenu({ id: agentId, x, y });
     },
     [],
@@ -6536,6 +6545,7 @@ export function RetroOffice3D({
                 const isError = status?.isError ?? agent.status === "error";
                 const working = status?.working ?? agent.status === "working";
                 const isRemoteAgent = isRemoteOfficeAgentId(agent.id);
+                const isOmlxAgent = isOmlxOfficeAgentId(agent.id);
                 const mood = moodByAgentId[agent.id];
                 const dotClass = isError
                   ? "bg-red-400"
@@ -6551,7 +6561,9 @@ export function RetroOffice3D({
                     onMouseLeave={handleAgentUnhover}
                     onClick={() => {
                       setSpotlightAgentId(agent.id);
-                      if (!isRemoteAgent) {
+                      if (isOmlxAgent) {
+                        onAgentChatSelect?.(agent.id);
+                      } else if (!isRemoteAgent) {
                         onAgentEdit?.(agent.id);
                       }
                     }}
@@ -6630,6 +6642,8 @@ export function RetroOffice3D({
                   const isError = status?.isError ?? agent.status === "error";
                   const working = status?.working ?? agent.status === "working";
                   const isRemoteAgent = isRemoteOfficeAgentId(agent.id);
+                  const isOmlxAgent = isOmlxOfficeAgentId(agent.id);
+                  const isReadOnlyAgent = isRemoteAgent || isOmlxAgent;
                   const dotClass = isError
                     ? "bg-red-400"
                     : working
@@ -6645,7 +6659,9 @@ export function RetroOffice3D({
                         type="button"
                         onClick={() => {
                           setSpotlightAgentId(agent.id);
-                          if (!isRemoteAgent) {
+                          if (isOmlxAgent) {
+                            onAgentChatSelect?.(agent.id);
+                          } else if (!isRemoteAgent) {
                             onAgentEdit?.(agent.id);
                           }
                           setAgentRosterOpen(false);
@@ -6668,6 +6684,7 @@ export function RetroOffice3D({
                           <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-amber-500/70">
                             {isError ? "error" : working ? "working" : "idle"}
                             {isRemoteAgent ? " · remote" : ""}
+                            {isOmlxAgent ? " · oMLX" : ""}
                             {runCount > 0 ? ` · ${runCount} runs` : ""}
                           </div>
                         </div>
@@ -6695,22 +6712,24 @@ export function RetroOffice3D({
                       <button
                         type="button"
                         title={
-                          isRemoteAgent
-                            ? "Remote office is view only"
+                          isReadOnlyAgent
+                            ? isOmlxAgent
+                              ? "oMLX activity is view only"
+                              : "Remote office is view only"
                             : monitorAgentId === agent.id
                               ? "Close desk monitor"
                               : "Open desk monitor"
                         }
-                        disabled={isRemoteAgent}
+                        disabled={isReadOnlyAgent}
                         onClick={() => {
-                          if (!isRemoteAgent) {
+                          if (!isReadOnlyAgent) {
                             onMonitorSelect?.(
                               monitorAgentId === agent.id ? null : agent.id,
                             );
                           }
                         }}
                         className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
-                          isRemoteAgent
+                          isReadOnlyAgent
                             ? "cursor-not-allowed border-white/10 text-white/25"
                             : monitorAgentId === agent.id
                               ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
@@ -6719,7 +6738,7 @@ export function RetroOffice3D({
                       >
                         <Monitor size={12} />
                       </button>
-                      {onAgentDelete && !isRemoteAgent ? (
+                      {onAgentDelete && !isReadOnlyAgent ? (
                         <button
                           type="button"
                           title="Delete agent"
@@ -7755,6 +7774,12 @@ export function RetroOffice3D({
                 }
                 onRemoteOfficeTokenChange={(token) =>
                   onRemoteOfficeTokenChange?.(token)
+                }
+                omlxLiveAgentsEnabled={omlxLiveAgentsEnabled}
+                omlxLiveAgentsLoaded={omlxLiveAgentsLoaded}
+                omlxLiveAgentsStatusText={omlxLiveAgentsStatusText}
+                onOmlxLiveAgentsEnabledChange={(enabled) =>
+                  onOmlxLiveAgentsEnabledChange?.(enabled)
                 }
                 voiceRepliesEnabled={voiceRepliesEnabled}
                 voiceRepliesVoiceId={voiceRepliesVoiceId}
