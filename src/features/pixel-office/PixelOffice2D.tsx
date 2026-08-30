@@ -11,6 +11,7 @@ import { SettingsPanel } from "@/features/office/components/panels/SettingsPanel
 import type { OfficeRenderMode } from "@/features/office/renderMode";
 import type { OfficeAgent } from "@/features/retro-office/core/types";
 import type { OfficeAnimationState } from "@/lib/office/eventTriggers";
+import { isOmlxOfficeAgentId } from "@/lib/omlx/activity";
 import type { StudioGatewayAdapterType } from "@/lib/studio/settings";
 import {
   buildPixelAgentInputs,
@@ -68,6 +69,10 @@ export type PixelOffice2DProps = {
   onRemoteOfficePresenceUrlChange?: (url: string) => void;
   onRemoteOfficeGatewayUrlChange?: (url: string) => void;
   onRemoteOfficeTokenChange?: (token: string) => void;
+  omlxLiveAgentsEnabled: boolean;
+  omlxLiveAgentsLoaded: boolean;
+  omlxLiveAgentsStatusText: string;
+  onOmlxLiveAgentsEnabledChange: (enabled: boolean) => void;
   voiceRepliesEnabled: boolean;
   voiceRepliesVoiceId: string | null;
   voiceRepliesSpeed: number;
@@ -195,6 +200,9 @@ export function PixelOffice2D(props: PixelOffice2DProps) {
   const contextAgent = contextMenu
     ? (agents.find((agent) => agent.id === contextMenu.agentId) ?? null)
     : null;
+  const contextAgentIsOmlx = contextAgent
+    ? isOmlxOfficeAgentId(contextAgent.id)
+    : false;
 
   const workingCount = agents.filter((agent) => agent.status === "working").length;
   const idleCount = agents.filter((agent) => agent.status === "idle").length;
@@ -273,7 +281,7 @@ export function PixelOffice2D(props: PixelOffice2DProps) {
       {/* Controls hint — bottom center (event console and chat own the corners). */}
       <div className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 pointer-events-none select-none">
         <div className="rounded-full bg-black/50 px-3 py-1 text-[10px] font-mono text-white/55 backdrop-blur-sm">
-          drag to pan · scroll to zoom · click an agent to chat
+          drag to pan · scroll to zoom · click an agent to interact
         </div>
       </div>
 
@@ -302,9 +310,9 @@ export function PixelOffice2D(props: PixelOffice2DProps) {
                 onAgentChatSelect?.(contextMenu.agentId);
               }}
             >
-              Open chat
+              {contextAgentIsOmlx ? "View activity" : "Open chat"}
             </button>
-            {onAgentEdit ? (
+            {onAgentEdit && !contextAgentIsOmlx ? (
               <button
                 className="block w-full px-3 py-2 text-left text-[11px] text-white/85 transition-colors hover:bg-cyan-500/15"
                 onClick={() => {
@@ -315,7 +323,7 @@ export function PixelOffice2D(props: PixelOffice2DProps) {
                 Edit agent
               </button>
             ) : null}
-            {onAgentDelete ? (
+            {onAgentDelete && !contextAgentIsOmlx ? (
               <button
                 className="block w-full px-3 py-2 text-left text-[11px] text-rose-300/90 transition-colors hover:bg-rose-500/15"
                 onClick={() => {
@@ -403,6 +411,12 @@ export function PixelOffice2D(props: PixelOffice2DProps) {
                 }
                 onRemoteOfficeTokenChange={(token) =>
                   props.onRemoteOfficeTokenChange?.(token)
+                }
+                omlxLiveAgentsEnabled={props.omlxLiveAgentsEnabled}
+                omlxLiveAgentsLoaded={props.omlxLiveAgentsLoaded}
+                omlxLiveAgentsStatusText={props.omlxLiveAgentsStatusText}
+                onOmlxLiveAgentsEnabledChange={
+                  props.onOmlxLiveAgentsEnabledChange
                 }
                 voiceRepliesEnabled={props.voiceRepliesEnabled}
                 voiceRepliesVoiceId={props.voiceRepliesVoiceId}

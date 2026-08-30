@@ -39,6 +39,10 @@ type SettingsPanelProps = {
   onRemoteOfficePresenceUrlChange: (url: string) => void;
   onRemoteOfficeGatewayUrlChange: (url: string) => void;
   onRemoteOfficeTokenChange: (token: string) => void;
+  omlxLiveAgentsEnabled: boolean;
+  omlxLiveAgentsLoaded: boolean;
+  omlxLiveAgentsStatusText: string;
+  onOmlxLiveAgentsEnabledChange: (enabled: boolean) => void;
   voiceRepliesEnabled: boolean;
   voiceRepliesVoiceId: string | null;
   voiceRepliesSpeed: number;
@@ -80,6 +84,10 @@ export function SettingsPanel({
   onRemoteOfficePresenceUrlChange,
   onRemoteOfficeGatewayUrlChange,
   onRemoteOfficeTokenChange,
+  omlxLiveAgentsEnabled,
+  omlxLiveAgentsLoaded,
+  omlxLiveAgentsStatusText,
+  onOmlxLiveAgentsEnabledChange,
   voiceRepliesEnabled,
   voiceRepliesVoiceId,
   voiceRepliesSpeed,
@@ -134,6 +142,48 @@ export function SettingsPanel({
         />
         <div className="mt-2 text-[10px] text-white/50">
           Used in the office scene header.
+        </div>
+      </div>
+      <div className="mt-3 rounded-lg border border-cyan-500/10 bg-black/20 px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-medium text-white">oMLX live agents</div>
+            <div className="mt-1 text-[10px] text-white/75">
+              Show read-only avatars while local oMLX models are active.
+            </div>
+          </div>
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">
+            {omlxLiveAgentsStatusText}
+          </span>
+        </div>
+        <div className="ui-settings-row mt-3 flex min-h-[72px] items-center justify-between gap-6 rounded-lg border border-cyan-500/10 bg-black/15 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-label="oMLX live agents"
+              aria-checked={omlxLiveAgentsEnabled}
+              className={`ui-switch self-center ${omlxLiveAgentsEnabled ? "ui-switch--on" : ""}`}
+              onClick={() =>
+                onOmlxLiveAgentsEnabledChange(!omlxLiveAgentsEnabled)
+              }
+              disabled={!omlxLiveAgentsLoaded}
+            >
+              <span className="ui-switch-thumb" />
+            </button>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-medium text-white">
+                Mirror local model activity
+              </span>
+              <span className="text-[10px] text-white/80">
+                Avatars remain for at least 30 minutes after first appearing.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-2 text-[10px] text-white/50">
+          Open Hermes3D and the oMLX admin page on 127.0.0.1, then sign in to
+          oMLX. Prompt and response text are never displayed.
         </div>
       </div>
       <div className="mt-3 rounded-lg border border-cyan-500/10 bg-black/20 px-4 py-3">
