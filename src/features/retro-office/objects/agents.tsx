@@ -2,7 +2,10 @@ import { Billboard, Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { memo, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { createDefaultAgentAvatarProfile } from "@/lib/avatars/profile";
+import {
+  createDefaultAgentAvatarProfile,
+  getAgentAvatarRearHairColor,
+} from "@/lib/avatars/profile";
 import {
   AGENT_SCALE,
   WALK_ANIM_SPEED,
@@ -609,6 +612,7 @@ export const AgentModel = memo(function AgentModel({
   const shoeColor = resolvedAppearance.clothing.shoesColor;
   const hairColor = resolvedAppearance.hair.color;
   const hairStyle = resolvedAppearance.hair.style;
+  const rearHairColor = getAgentAvatarRearHairColor(hairStyle, hairColor);
   const topStyle = resolvedAppearance.clothing.topStyle;
   const bottomStyle = resolvedAppearance.clothing.bottomStyle;
   const hatStyle = resolvedAppearance.accessories.hatStyle;
@@ -1071,6 +1075,12 @@ export const AgentModel = memo(function AgentModel({
         <meshStandardMaterial attach="material-4" map={faceTexture} roughness={0.55} />
         <meshStandardMaterial attach="material-5" color={skin} roughness={0.55} />
       </mesh>
+      {rearHairColor ? (
+        <mesh position={[0, 0.47, -0.078]} castShadow>
+          <boxGeometry args={[0.17, 0.16, 0.024]} />
+          <meshStandardMaterial color={rearHairColor} roughness={0.35} metalness={0.05} />
+        </mesh>
+      ) : null}
       {hairStyle === "short" ? (
         <mesh position={[0, 0.555, 0]} castShadow>
           <boxGeometry args={[0.17, 0.05, 0.15]} />

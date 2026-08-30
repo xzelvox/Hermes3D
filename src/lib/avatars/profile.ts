@@ -25,6 +25,19 @@ export type AgentAvatarBottomStyle =
   | "hot-pants";
 export type AgentAvatarHatStyle = "none" | "cap" | "beanie";
 
+const REAR_HAIR_BASE_STYLES: ReadonlySet<AgentAvatarHairStyle> = new Set([
+  "long",
+  "bob",
+  "twin-tails",
+  "ponytail",
+  "long-wave",
+]);
+
+export const getAgentAvatarRearHairColor = (
+  style: AgentAvatarHairStyle,
+  hairColor: string,
+): string | null => (REAR_HAIR_BASE_STYLES.has(style) ? hairColor : null);
+
 export type AgentAvatarProfile = {
   version: 1;
   seed: string;
