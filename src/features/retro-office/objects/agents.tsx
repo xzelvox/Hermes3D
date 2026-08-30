@@ -1205,6 +1205,21 @@ export const AgentModel = memo(function AgentModel({
             <boxGeometry args={[0.17, 0.05, 0.15]} />
             <meshStandardMaterial color={hairColor} roughness={0.35} metalness={0.05} />
           </mesh>
+          <mesh position={[0, 0.395, -0.08]} castShadow>
+            <boxGeometry args={[0.135, 0.19, 0.035]} />
+            <meshStandardMaterial color={hairColor} roughness={0.35} metalness={0.05} />
+          </mesh>
+          {[-0.04, 0.04].map((x, index) => (
+            <mesh
+              key={`rear-${x}`}
+              position={[x, 0.285, -0.08]}
+              rotation={[0, 0, index === 0 ? 0.1 : -0.1]}
+              castShadow
+            >
+              <boxGeometry args={[0.07, 0.09, 0.04]} />
+              <meshStandardMaterial color={hairColor} roughness={0.35} metalness={0.05} />
+            </mesh>
+          ))}
           {[-0.09, 0.09].flatMap((x) =>
             [0.49, 0.42, 0.35].map((y, index) => (
               <mesh
