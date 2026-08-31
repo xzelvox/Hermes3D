@@ -362,6 +362,20 @@ const PreviewFigure = ({
             <boxGeometry args={[0.18, 0.05, 0.16]} />
             <meshLambertMaterial color={hairColor} />
           </mesh>
+          <mesh position={[0, 0.425, -0.085]}>
+            <boxGeometry args={[0.145, 0.19, 0.04]} />
+            <meshLambertMaterial color={hairColor} />
+          </mesh>
+          {[-0.042, 0.042].map((x, index) => (
+            <mesh
+              key={`rear-${x}`}
+              position={[x, 0.315, -0.085]}
+              rotation={[0, 0, index === 0 ? 0.1 : -0.1]}
+            >
+              <boxGeometry args={[0.075, 0.1, 0.045]} />
+              <meshLambertMaterial color={hairColor} />
+            </mesh>
+          ))}
           {[-0.095, 0.095].flatMap((x) =>
             [0.52, 0.44, 0.36].map((y, index) => (
               <mesh
